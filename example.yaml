@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: busybox
+  template:
+    metadata:
+      labels:
+        name: busybox
+      annotations:
+        resourger/reload: "secret:example"
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command:
+            - "sleep"
+            - "1h"
+---
+apiVersion: v1
+metadata:
+  name: example
+  namespace: default
+data:
+  VALUE: YWRtaW4ta2V5
+kind: Secret
+type: Opaque

@@ -1,0 +1,79 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: resourger
+  namespace: default
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: resourger
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["*"]
+  - apiGroups: [events.k8s.io]
+    resources: [events]
+    verbs: [create]
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [create]
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "replicasets", "namespaces/status"]
+    verbs: ["*"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: resourger
+subjects:
+  - kind: ServiceAccount
+    name: resourger
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: resourger
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resourger
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      name: resourge
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        name: resourge
+    spec:
+      containers:
+      - image: europe-west8-docker.pkg.dev/resourger-388314/registry/resourger@sha256:5bdaa8d49bc6a69312e402c56172b9cc1a11d08053089aa3e226b95bf84f456d
+        imagePullPolicy: IfNotPresent
+        name: resourge
+        resources:
+          limits:
+            cpu: 20m
+            memory: 150Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          seccompProfile:
+            type: RuntimeDefault
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      serviceAccount: resourger
+      serviceAccountName: resourger
+      terminationGracePeriodSeconds: 30
